@@ -50,7 +50,7 @@ export default function ProductDetailPage() {
     getProductById(id)
       .then((res) => {
         if (res.success && res.data) {
-          setProduct(res.data);
+          setProduct(res.data.data);
         } else {
           setProduct(null);
         }

@@ -186,7 +186,7 @@ const Catalog = () => {
                 // 🔧 CORRECTION ICI : Ajout du préfixe API_URL pour les images
                 image={
                   product.images && product.images.length > 0 
-                    ? `${import.meta.env.VITE_API_URL}${product.images[0]}`
+                    ? `${product.images[0]}`
                     : "/placeholder.svg"
                 }
                 location={product.location_city}

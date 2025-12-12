@@ -1,4 +1,3 @@
-// src/features/seller/ProductList.tsx
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,23 +45,29 @@ export default function ProductList({ onEdit, onRefresh }: Props) {
                 <div key={product.id} className="flex items-center justify-between p-5 border rounded-xl hover:bg-gray-50">
                   <div className="flex items-center gap-5">
                     {/* IMAGE DU PRODUIT - CORRECTION ICI */}
-                    {product.images && product.images.length > 0 ? (
+                     <img
+                        src={`${product.images[0]}`}
+                        alt={product.title}
+                        className="w-20 h-20 object-cover rounded-xl border-2"
+                        
+                      />
+                    
                       <img
-                        src={`${import.meta.env.VITE_API_URL}${product.images[0]}`}
+                        src={`${product.images[0]}`}
                         alt={product.title}
                         className="w-20 h-20 object-cover rounded-xl border-2"
                         onError={(e) => {
                           // Fallback si l'image ne charge pas
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          // e.currentTarget.style.display = 'none';
+                          // e.currentTarget.nextElementSibling?.classList.remove('hidden');
                         }}
                       />
-                    ) : null}
+                 
                     
                     {/* Fallback icon si pas d'image */}
-                    <div className={`${product.images && product.images.length > 0 ? 'hidden' : ''} bg-gray-100 border-2 border-dashed rounded-xl w-20 h-20 flex items-center justify-center`}>
+                    {/* <div className={`${product.images && product.images.length > 0 ? 'hidden' : ''} bg-gray-100 border-2 border-dashed rounded-xl w-20 h-20 flex items-center justify-center`}>
                       <Package className="w-8 h-8 text-gray-400" />
-                    </div>
+                    </div> */}
 
                     <div>
                       <h3 className="font-semibold text-lg">{product.title}</h3>
