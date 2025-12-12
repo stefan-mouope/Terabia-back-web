@@ -88,7 +88,7 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log('Connexion BDD OK');
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({});
     console.log('Modèles synchronisés');
 
     server.listen(PORT, '0.0.0.0', () => {

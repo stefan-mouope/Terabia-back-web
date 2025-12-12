@@ -1,37 +1,40 @@
-// middleware/upload.js
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
-// Crée le dossier uploads s'il n'existe pas
-const uploadDir = 'uploads/products';
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
+// Configuration du storage Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'products', // Dossier dans Cloudinary
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    transformation: [
+      {
+        width: 1000,
+        height: 1000,
+        crop: 'limit', // Limite la taille max sans déformer
+        quality: 'auto:good',
+      },
+    ],
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
 });
 
+// Configuration Multer
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 Mo max
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB max par fichier
+  },
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|webp/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-
-    if (mimetype && extname) {
-      return cb(null, true);
+    // Vérifier le type MIME
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Format de fichier non supporté. Utilisez JPG, PNG, WEBP ou GIF.'), false);
     }
-    cb(new Error('Seules les images (jpeg, jpg, png, webp) sont autorisées'));
-  }
+  },
 });
 
 module.exports = upload;

@@ -1,13 +1,14 @@
 const { Product, User } = require("../models");
+const cloudinary = require('cloudinary').v2;
 
-// controllers/productController.js → createProduct
 exports.createProduct = async (req, res) => {
   try {
-    console.log("req.files →", req.files);        // ← TU DOIS VOIR TES FICHIERS ICI
+    console.log("req.files →", req.files);
     console.log("req.body →", req.body);
 
+    // Extraire les URLs Cloudinary des fichiers uploadés
     const images = req.files 
-      ? req.files.map(file => `/uploads/products/${file.filename}`)
+      ? req.files.map(file => file.path) // file.path contient l'URL Cloudinary
       : [];
 
     const productData = {
@@ -16,17 +17,30 @@ exports.createProduct = async (req, res) => {
       stock: parseInt(req.body.stock) || 0,
       category_id: parseInt(req.body.category_id),
       seller_id: req.body.seller_id || req.user?.id,
-      images: images, // ← Maintenant ça sera rempli !
+      images: images, // URLs Cloudinary
     };
 
     const newProduct = await Product.create(productData);
     res.status(201).json(newProduct);
   } catch (error) {
     console.error("Erreur création produit:", error);
+    
+    // Nettoyer les images uploadées en cas d'erreur
+    if (req.files) {
+      req.files.forEach(async (file) => {
+        try {
+          // Extraire le public_id de l'URL Cloudinary
+          const publicId = file.filename; // ou utilisez file.public_id si disponible
+          await cloudinary.uploader.destroy(publicId);
+        } catch (cleanupError) {
+          console.error("Erreur nettoyage image:", cleanupError);
+        }
+      });
+    }
+    
     res.status(500).json({ error: error.message });
   }
 };
-
 
 exports.getProductById = async (req, res) => {
   try {
