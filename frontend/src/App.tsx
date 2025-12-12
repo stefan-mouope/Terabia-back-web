@@ -4,9 +4,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SocketProvider } from "@/contexts/SocketContext";  // ← Ajouté
 import ProtectedRoute from "@/components/ProtectedRoute";
 
+// Pages
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
 import CartPage from "./pages/features/buyer/CartPage";
@@ -31,55 +34,57 @@ const App = () => (
       <Toaster />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* === Routes PUBLIQUES (toujours accessibles) === */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<RoleSelection />} />
-            <Route path="/signup/buyer" element={<SignupBuyer />} />
-            <Route path="/signup/seller" element={<SignupSeller />} />
-            <Route path="/signup/delivery" element={<SignupDelivery />} />
+          <SocketProvider>
+            <Routes>
+              {/* === Routes PUBLIQUES === */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<RoleSelection />} />
+              <Route path="/signup/buyer" element={<SignupBuyer />} />
+              <Route path="/signup/seller" element={<SignupSeller />} />
+              <Route path="/signup/delivery" element={<SignupDelivery />} />
 
-            {/* === Routes ACHETEURS (connecté ou pas) === */}
-            <Route path="/" element={<Index />} />
-            <Route path="/catalog" element={<Catalog />} />
-            <Route path="/product/:id" element={<ProductDetailPage />} />
-            <Route path="/seller/:id" element={<SellerProfilePage />} />
+              {/* === Routes ACCESSIBLES À TOUS (connecté ou pas) === */}
+              <Route path="/" element={<Index />} />
+              <Route path="/catalog" element={<Catalog />} />
+              <Route path="/product/:id" element={<ProductDetailPage />} />
+              <Route path="/seller/:id" element={<SellerProfilePage />} />
 
-            {/* === Routes PROTÉGÉES === */}
+              {/* === Routes PROTÉGÉES === */}
 
-            {/* Panier : doit être connecté */}
-            <Route
-              path="/cart"
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <CartPage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Panier → doit être connecté */}
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute requireAuth={true}>
+                    <CartPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Dashboard Vendeur */}
-            <Route
-              path="/vendor-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["seller"]}>
-                  <VendorDashboard />
-                </ProtectedRoute>
-              }
-            />
+              {/* Dashboard Vendeur → rôle "seller" */}
+              <Route
+                path="/vendor-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["seller"]}>
+                    <VendorDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Dashboard Livreur */}
-            <Route
-              path="/delivery-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["delivery"]}>
-                  <DeliveryDashboard />
-                </ProtectedRoute>
-              }
-            />
+              {/* Dashboard Livreur → rôle "delivery" */}
+              <Route
+                path="/delivery-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["delivery"]}>
+                    <DeliveryDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SocketProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

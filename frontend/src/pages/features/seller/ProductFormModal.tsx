@@ -19,8 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
-
+import { Loader2, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createProduct, updateProduct, Product } from "@/api/products";
 import { getAllCategories, Category } from "@/api/categories";
@@ -29,7 +28,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  product?: Product | null; // Produit à modifier (ou null = ajout)
+  product?: Product | null;
 }
 
 export default function ProductFormModal({
@@ -42,7 +41,7 @@ export default function ProductFormModal({
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // État du formulaire
+  // Formulaires texte
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -53,18 +52,22 @@ export default function ProductFormModal({
     location_city: user?.city || "",
   });
 
-  // Charger les catégories une seule fois
+  // Gestion des images
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  // Charger les catégories
   useEffect(() => {
     getAllCategories().then((res) => {
       if (res.success) setCategories(res.data || []);
     });
   }, []);
 
-  // METTRE À JOUR LE FORMULAIRE QUAND LE PRODUIT CHANGE OU QUAND LE MODAL S’OUVRE
+  // Reset + pré-remplissage quand le modal s’ouvre ou que le produit change
   useEffect(() => {
     if (open) {
       if (product) {
-        // Mode édition → on pré-remplit avec les données du produit
+        // Mode édition
         setForm({
           title: product.title,
           description: product.description || "",
@@ -74,8 +77,12 @@ export default function ProductFormModal({
           category_id: product.category_id.toString(),
           location_city: product.location_city || user?.city || "",
         });
+
+        // Afficher les anciennes images (URL du serveur)
+        setImagePreviews(product.images || []);
+        setSelectedImages([]); // On garde les anciennes, on n’ajoute pas de nouveaux fichiers par défaut
       } else {
-        // Mode ajout → on réinitialise
+        // Mode création
         setForm({
           title: "",
           description: "",
@@ -85,9 +92,29 @@ export default function ProductFormModal({
           category_id: "",
           location_city: user?.city || "",
         });
+        setSelectedImages([]);
+        setImagePreviews([]);
       }
     }
-  }, [product, open, user?.city]); // Clé : dépend de `open` et `product`
+  }, [product, open, user?.city]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + selectedImages.length + (product?.images?.length || 0) > 10) {
+      alert("Maximum 10 images autorisées");
+      return;
+    }
+
+    setSelectedImages((prev) => [...prev, ...files]);
+
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async () => {
     if (!form.title || !form.price || !form.stock || !form.category_id) {
@@ -96,29 +123,39 @@ export default function ProductFormModal({
     }
 
     setLoading(true);
-    try {
-      const payload = {
-        title: form.title,
-        description: form.description || null,
-        price: parseFloat(form.price),
-        stock: parseInt(form.stock),
-        unit: form.unit,
-        category_id: parseInt(form.category_id),
-        location_city: form.location_city,
-      };
+    const formData = new FormData();
 
+    // Champs texte
+    formData.append("title", form.title);
+    formData.append("description", form.description || "");
+    formData.append("price", form.price);
+    formData.append("stock", form.stock);
+    formData.append("unit", form.unit);
+    formData.append("category_id", form.category_id);
+    formData.append("location_city", form.location_city);
+
+    if (!product) {
+      formData.append("seller_id", user!.id);
+    }
+
+    // Nouvelles images sélectionnées
+    selectedImages.forEach((image) => {
+      formData.append("images", image);
+    });
+
+    try {
       if (product) {
-        await updateProduct(product.id, payload);
+        await updateProduct(product.id, formData);
         alert("Produit modifié avec succès !");
       } else {
-        await createProduct({ ...payload, seller_id: user!.id });
+        await createProduct(formData);
         alert("Produit ajouté avec succès !");
       }
-
       onSuccess();
       onOpenChange(false);
     } catch (err: any) {
-      alert(err.error || "Erreur lors de l'enregistrement");
+      console.error(err);
+      alert(err.error || "Erreur lors de l’enregistrement");
     } finally {
       setLoading(false);
     }
@@ -134,6 +171,7 @@ export default function ProductFormModal({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Titre + Prix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <Label>Titre <span className="text-red-500">*</span></Label>
@@ -154,6 +192,7 @@ export default function ProductFormModal({
             </div>
           </div>
 
+          {/* Description */}
           <div>
             <Label>Description (optionnel)</Label>
             <Textarea
@@ -164,6 +203,7 @@ export default function ProductFormModal({
             />
           </div>
 
+          {/* Stock, Unité, Ville */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>
               <Label>Stock <span className="text-red-500">*</span></Label>
@@ -191,6 +231,7 @@ export default function ProductFormModal({
             </div>
           </div>
 
+          {/* Catégorie */}
           <div>
             <Label>Catégorie <span className="text-red-500">*</span></Label>
             <Select
@@ -208,6 +249,39 @@ export default function ProductFormModal({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Upload Images */}
+          <div>
+            <Label>Images du produit (max 10)</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+              className="cursor-pointer"
+            />
+
+            {/* Aperçus */}
+            {imagePreviews.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mt-4">
+                {imagePreviews.map((src, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={src.startsWith("blob:") || src.startsWith("data:") ? src : `${import.meta.env.VITE_API_URL}${src}`}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                    <button
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

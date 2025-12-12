@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProductsBySellerId, Product } from "@/api/products";
 import DeleteProductDialog from "./DeleteProductDialog";
@@ -45,7 +45,25 @@ export default function ProductList({ onEdit, onRefresh }: Props) {
               {products.map(product => (
                 <div key={product.id} className="flex items-center justify-between p-5 border rounded-xl hover:bg-gray-50">
                   <div className="flex items-center gap-5">
-                    <div className="bg-gray-200 border-2 border-dashed rounded-xl w-20 h-20" />
+                    {/* IMAGE DU PRODUIT - CORRECTION ICI */}
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={`${import.meta.env.VITE_API_URL}${product.images[0]}`}
+                        alt={product.title}
+                        className="w-20 h-20 object-cover rounded-xl border-2"
+                        onError={(e) => {
+                          // Fallback si l'image ne charge pas
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    
+                    {/* Fallback icon si pas d'image */}
+                    <div className={`${product.images && product.images.length > 0 ? 'hidden' : ''} bg-gray-100 border-2 border-dashed rounded-xl w-20 h-20 flex items-center justify-center`}>
+                      <Package className="w-8 h-8 text-gray-400" />
+                    </div>
+
                     <div>
                       <h3 className="font-semibold text-lg">{product.title}</h3>
                       <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
@@ -57,10 +75,8 @@ export default function ProductList({ onEdit, onRefresh }: Props) {
                       </div>
                     </div>
                   </div>
+                  
                   <div className="flex gap-2">
-                    {/* <Button variant="ghost" size="icon" asChild>
-                      <Link to={`/product/${product.id}`}><Eye className="w-5 h-5" /></Link>
-                    </Button> */}
                     <Button variant="ghost" size="icon" onClick={() => onEdit(product)}>
                       <Edit className="w-5 h-5" />
                     </Button>

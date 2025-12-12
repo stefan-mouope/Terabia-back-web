@@ -14,8 +14,9 @@ const AuthUser = require('./authUserModel')(sequelize, Sequelize);
 AuthUser.hasOne(User, { foreignKey: 'id', onDelete: 'CASCADE' });
 User.belongsTo(AuthUser, { foreignKey: 'id' });
 
-User.hasMany(Product, { foreignKey: 'seller_id', onDelete: 'CASCADE' });
-Product.belongsTo(User, { foreignKey: 'seller_id' });
+User.hasMany(Product, { foreignKey: 'seller_id', as: "products", onDelete: 'CASCADE' });
+Product.belongsTo(User, { foreignKey: 'seller_id', as: "seller" });
+
 
 Category.hasMany(Product, { foreignKey: 'category_id' });
 Product.belongsTo(Category, { foreignKey: 'category_id' });

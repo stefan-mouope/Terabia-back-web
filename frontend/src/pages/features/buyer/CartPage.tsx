@@ -1,8 +1,8 @@
 // src/pages/features/buyer/CartPage.tsx
 
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useCart } from "@/store/cartStore";
-import { createOrder } from "@/api/orders"; // ← ton fichier API
+import { createOrder } from "@/api/orders";
 import { Trash2, CheckCircle, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -15,51 +15,52 @@ export default function CartPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-const handleCheckout = async () => {
+  const handleCheckout = async () => {
+    if (!user?.id) {
+      alert("Connectez-vous pour commander");
+      navigate("/login");
+      return;
+    }
 
-  if (!user?.id) {
-    alert("Connectez-vous pour commander");
-    navigate("/login");
-    return;
-  }
+    if (!confirm(`Confirmer la commande de ${getTotalPrice().toLocaleString()} FCFA ?`)) {
+      return;
+    }
 
-  if (!confirm(`Confirmer la commande de ${getTotalPrice().toLocaleString()} FCFA ?`)) return;
+    setIsLoading(true);
 
-  setIsLoading(true);
+    try {
+      const orderData = {
+        buyer_id: user.id,
+        items: items.map((i) => ({
+          product_id: i.id,
+          quantity: i.quantity,
+          price: i.price,
+        })),
+        total: getTotalPrice(),
+        subtotal: getTotalPrice(),
+        delivery_fee: 0,
+        delivery_address: "Adresse par défaut",
+        delivery_city: "Yaoundé",
+      };
 
-  try {
-    const orderData = {
-    buyer_id: user.id,
-    items: items.map((i) => ({
-        product_id: i.id,
-        quantity: i.quantity,
-        price: i.price,
-    })),
-    total: getTotalPrice(),
-    subtotal: getTotalPrice(),           // AJOUTÉ
-    delivery_fee: 0,                     // AJOUTÉ (facultatif mais propre)
-    delivery_address: "Adresse par défaut",
-    delivery_city: "Yaoundé",
-    };
+      console.log("Envoi commande :", orderData);
 
-    console.log("Envoi commande :", orderData);
+      await createOrder(orderData);
 
-    await createOrder(orderData);
+      clearCart();
+      setOrderSuccess(true);
+    } catch (err: any) {
+      console.error("Erreur lors de la commande :", err);
+      alert(
+        "Erreur : " +
+          (err.response?.data?.error || err.message || "Impossible de passer la commande")
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    clearCart();
-    setOrderSuccess(true);
-  } catch (err: any) {
-    console.error("Erreur :", err.response?.data || err);
-    alert("Erreur : " + (err.response?.data?.error || "Impossible de passer commande"));
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-
-
-  // Écran de succès
+  // === Écran de succès ===
   if (orderSuccess) {
     return (
       <div className="container mx-auto py-20 text-center">
@@ -75,7 +76,7 @@ const handleCheckout = async () => {
     );
   }
 
-  // Panier vide
+  // === Panier vide ===
   if (items.length === 0) {
     return (
       <div className="container mx-auto py-20 text-center">
@@ -88,7 +89,7 @@ const handleCheckout = async () => {
     );
   }
 
-  // Panier normal
+  // === Panier avec articles ===
   return (
     <div className="container mx-auto py-10 max-w-4xl">
       <h1 className="text-4xl font-bold mb-10">Mon panier</h1>
@@ -141,11 +142,7 @@ const handleCheckout = async () => {
           onClick={handleCheckout}
           disabled={isLoading}
         >
-          {isLoading ? (
-            <>Envoi en cours...</>
-          ) : (
-            <>Commander maintenant</>
-          )}
+          {isLoading ? "Envoi en cours..." : "Commander maintenant"}
         </Button>
       </div>
     </div>

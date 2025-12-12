@@ -12,17 +12,17 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import { useState, useEffect } from "react"; // Import useEffect
-import { getAllProducts, Product } from "@/api/products"; // Import API for products
-import { getAllCategories, Category } from "@/api/categories"; // Import API for categories
+import { useState, useEffect } from "react";
+import { getAllProducts, Product } from "@/api/products";
+import { getAllCategories, Category } from "@/api/categories";
 
 const Catalog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [sortBy, setSortBy] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]); // State for fetched products
-  const [categories, setCategories] = useState<Category[]>([]); // State for fetched categories
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +41,6 @@ const Catalog = () => {
         }
 
         if (categoriesResult.success && categoriesResult.data) {
-          // Add "Tous" as a default category option at the beginning
           setCategories([{ id: 0, name: "Tous", slug: "tous" }, ...categoriesResult.data]);
         } else {
           setError(categoriesResult.error || "Erreur lors du chargement des catégories.");
@@ -58,14 +57,12 @@ const Catalog = () => {
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
-    // Assuming category_id matches with category.id, and we need category name for filtering
     const matchesCategory = selectedCategory === "Tous" ||
                             categories.find(cat => cat.id === product.category_id)?.name === selectedCategory;
     return matchesSearch && matchesCategory;
   }).sort((a, b) => {
     if (sortBy === "price-asc") return a.price - b.price;
     if (sortBy === "price-desc") return b.price - a.price;
-    // Implement other sorting logic if needed
     return 0;
   });
 
@@ -186,9 +183,14 @@ const Catalog = () => {
                 name={product.title}
                 price={product.price}
                 unit={product.unit}
-                image={product.images && product.images.length > 0 ? product.images[0] : "/placeholder.svg"} // Use first image or placeholder
+                // 🔧 CORRECTION ICI : Ajout du préfixe API_URL pour les images
+                image={
+                  product.images && product.images.length > 0 
+                    ? `${import.meta.env.VITE_API_URL}${product.images[0]}`
+                    : "/placeholder.svg"
+                }
                 location={product.location_city}
-                vendor={"Nom du vendeur"} // You might need to fetch seller name separately if not eager loaded
+                vendor={product.seller_name || "Vendeur"} // Utilise seller_name si disponible
                 category={categories.find(cat => cat.id === product.category_id)?.name}
                 stock={product.stock}
               />

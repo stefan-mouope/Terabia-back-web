@@ -49,7 +49,7 @@ const Index = () => {
               
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="text-lg h-14 px-8" asChild>
-                  <Link to="/login">
+                  <Link to="/catalog">
                     <ShoppingBag className="mr-2 w-5 h-5" />
                     Acheter des produits
                   </Link>

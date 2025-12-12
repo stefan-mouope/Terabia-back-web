@@ -65,7 +65,7 @@ export const Header = () => {
               variant="ghost"
               size="icon"
               className="relative"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/cart")}
               aria-label={`Panier (${itemsCount} articles)`}
             >
               <ShoppingCart className="w-5 h-5" />
